@@ -125,6 +125,7 @@ struct FoveatedISPCDevice : api::Device
   std::shared_ptr<FoveatedLoadBalancer> loadBalancer;
 
  private:
+  // why not one ISPCDevice like the multidevice?
   RTCDevice embreeDevice = nullptr;
   VKLDevice vklDevice = nullptr;
 };
