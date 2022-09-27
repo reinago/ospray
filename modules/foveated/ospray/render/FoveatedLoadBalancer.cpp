@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "FoveatedLoadBalancer.h"
+
+#include <OSPConfig.h>
+
 #include "api/Device.h"
 #include "rkcommon/tasking/parallel_for.h"
 
@@ -78,7 +81,7 @@ void FoveatedLoadBalancer::renderSamples(FrameBuffer *fb,
         numJobs(sampleCnt, renderer->spp, accumID), [&](size_t tIdx) {
 #else
     tasking::parallel_for(
-        divRoundUp(sampleCnt / RENDER_SAMPLES_PER_JOB, 1), [&](size_t tIdx) {
+        divRoundUp(sampleCnt / OSPRAY_RENDER_TASK_SIZE, 1), [&](size_t tIdx) {
 #endif
         // Clear the samples of the current job.
         renderer->clearSamples(fb,
@@ -105,7 +108,7 @@ void FoveatedLoadBalancer::renderSamples(FrameBuffer *fb,
         }
 
         // Increase the number of samples that have been rendered.
-        samplesDone += RENDER_SAMPLES_PER_JOB;
+        samplesDone += OSPRAY_RENDER_TASK_SIZE;
 
         // Render the samples of the current job.
         renderer->renderSamples(fb,
@@ -211,7 +214,7 @@ size_t FoveatedLoadBalancer::numJobs(
 {
   const int blocks =
       (accumID > 0 || spp > 0) ? 1 : std::min(1 << -2 * spp, sampleCnt);
-  return divRoundUp(sampleCnt / RENDER_SAMPLES_PER_JOB, blocks);
+  return divRoundUp(sampleCnt / OSPRAY_RENDER_TASK_SIZE, blocks);
 }
 
 } // namespace foveated

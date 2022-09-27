@@ -83,9 +83,7 @@ target_include_directories(ospray_module_foveated
 target_compile_definitions(ospray_module_foveated
   PUBLIC
     # was: RENDER_SAMPLES_PER_JOB={OSPRAY_PIXELS_PER_JOB}
-    # both the following are broken
-    RENDER_SAMPLES_PER_JOB=${OSPRAY_RENDER_TASK_SIZE}
-    RENDERTILE_PIXELS_PER_JOB=${OSPRAY_TILE_SIZE} # no idea where to actually get that from
+    # changelog: Replace CMake variable OSPRAY_PIXELS_PER_JOB by OSPRAY_RENDER_TASK_SIZE
 )
 
 ## Install the library.
