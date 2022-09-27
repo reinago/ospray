@@ -5,11 +5,15 @@
 #include "FoveatedRenderer.h"
 #include "common/Instance.h"
 #include "common/Util.h"
+#include "common/Data.h"
+#include "fb/Framebuffer.h"
+#include "common/World.h"
+#include "camera/Camera.h"
 #include "geometry/GeometricModel.h"
 // ispc exports
 #include "render/FoveatedRenderer_ispc.h"
 // ospray
-#include "render/LoadBalancer.h"
+//#include "render/LoadBalancer.h"
 
 namespace ospray {
 
@@ -31,26 +35,26 @@ FoveatedRenderer::FoveatedRenderer()
 
 FoveatedRenderer::~FoveatedRenderer() {}
 
-void FoveatedRenderer::clearSamples(FrameBuffer *fb,
-    vec3f *albedoBuffer,
-    vec3f *normalBuffer,
-    void *lookAtOld,
-    int32 lookAtCnt,
-    void *perFrameData,
-    size_t jobID) const
-{
-  if (this->clear) {
-    // Clear the current batch of samples.
-    ispc::FoveatedRenderer_clearSamples(getIE(),
-        fb->getIE(),
-        albedoBuffer,
-        normalBuffer,
-        (ispc::vec2i *)lookAtOld,
-        lookAtCnt,
-        perFrameData,
-        jobID);
-  }
-}
+//void FoveatedRenderer::clearSamples(FrameBuffer *fb,
+//    vec3f *albedoBuffer,
+//    vec3f *normalBuffer,
+//    void *lookAtOld,
+//    int32 lookAtCnt,
+//    void *perFrameData,
+//    size_t jobID) const
+//{
+//  if (this->clear) {
+//    // Clear the current batch of samples.
+//    ispc::FoveatedRenderer_clearSamples(getIE(),
+//        fb->getIE(),
+//        albedoBuffer,
+//        normalBuffer,
+//        (ispc::vec2i *)lookAtOld,
+//        lookAtCnt,
+//        perFrameData,
+//        jobID);
+//  }
+//}
 
 void FoveatedRenderer::commit()
 {
@@ -81,7 +85,7 @@ void FoveatedRenderer::commit()
   setupPixelFilter();
 
   if (materialData)
-    ispcMaterialPtrs = createArrayOfIE(*materialData);
+    ispcMaterialPtrs = createArrayOfSh<ispc::Material>(*materialData);
   else
     ispcMaterialPtrs.clear();
 
@@ -121,16 +125,16 @@ void FoveatedRenderer::commit()
   // rendered.
   this->clear = true;
 
-  if (getIE()) {
-    ispc::FoveatedRenderer_set(getIE(),
+  if (getSh()) {
+    ispc::FoveatedRenderer_set(getSh(),
         spp,
         maxDepth,
         minContribution,
         (ispc::vec4f &)bgColor,
-        backplate ? backplate->getIE() : nullptr,
+        backplate ? backplate->getSh() : nullptr,
         ispcMaterialPtrs.size(),
         ispcMaterialPtrs.data(),
-        maxDepthTexture ? maxDepthTexture->getIE() : nullptr,
+        maxDepthTexture ? maxDepthTexture->getSh() : nullptr,
         pixelFilter ? pixelFilter->getIE() : nullptr,
         this->samplingData,
         this->samplingDataCnt);
@@ -183,10 +187,10 @@ void FoveatedRenderer::renderSamples(FrameBuffer *fb,
     size_t jobID) const
 {
   // Render the current batch of samples.
-  ispc::FoveatedRenderer_renderSamples(getIE(),
-      fb->getIE(),
-      camera->getIE(),
-      world->getIE(),
+  ispc::FoveatedRenderer_renderSamples(getSh(),
+      fb->getSh(),
+      camera->getSh(),
+      world->getSh(),
       accumID,
       albedoBuffer,
       normalBuffer,

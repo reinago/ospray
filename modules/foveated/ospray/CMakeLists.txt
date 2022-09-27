@@ -29,11 +29,11 @@ ispc_target_add_sources(ospray_module_foveated
   ##${PROJECT_SOURCE_DIR}/ospray/fb/registration.cpp
   
   ## The ISPCDevice for the foveated rendering.
-  api/FoveatedISPCDevice.cpp  
-  api/FoveatedISPCDevice.ispc  
+  #api/FoveatedISPCDevice.cpp  
+  #api/FoveatedISPCDevice.ispc  
   
   ## The LoadBalancer for the foveated rendering.
-  render/FoveatedLoadBalancer.cpp
+  #render/FoveatedLoadBalancer.cpp
   
   ## Additional ispc files required for the foveated renderer. Use the
   ## files provided by the ospray_module_ispc so that there is no copy.
@@ -48,14 +48,14 @@ ispc_target_add_sources(ospray_module_foveated
   
   ## Additional ispc files required for the foveated SciVis renderer. Use the
   ## files provided by the ospray_module_ispc so that there is no copy.
-  ../../../ospray/render/scivis/lightAlpha.ispc
-  ../../../ospray/render/scivis/surfaces.ispc
-  ../../../ospray/render/scivis/volumes.ispc
-  ../../../ospray/render/scivis/SciVis.ispc
-  ../../../ospray/render/pathtracer/GeometryLight.ispc
-  ../../../ospray/common/World.ispc
-  ../../../ospray/math/sobol.ispc
-  ../../../ospray/math/Distribution1D.ispc
+  #../../../ospray/render/scivis/lightAlpha.ispc
+  #../../../ospray/render/scivis/surfaces.ispc
+  #../../../ospray/render/scivis/volumes.ispc
+  #../../../ospray/render/scivis/SciVis.ispc
+  #../../../ospray/render/pathtracer/GeometryLight.ispc
+  #../../../ospray/common/World.ispc
+  #../../../ospray/math/sobol.ispc
+  #../../../ospray/math/Distribution1D.ispc
   
   ## The foveated SciVis renderer.
   render/scivis/FoveatedSciVis.cpp

@@ -5,6 +5,7 @@
 #include "camera/Camera.ih"
 #include "common/World.ih"
 #include "math/random.ih"
+#include "pf/PixelFilter.ih"
 #include "render/util.ih"
 #include "fb/FrameBufferView.ih"
 
@@ -301,12 +302,17 @@ unmasked void FoveatedRenderer_default_renderSamples(
             1.f / 6.f); // rotate to sample center (0.5) of pixel for sampleID=0
         const vec2f pixelSample = make_vec2f(pixel_du, pixel_dv);
 
+        //vec2f pfSample = pixelSample;
+        //if (self->super.pixelFilter)
+        //{
+        //  pfSample =
+        //      self->super.pixelFilter->sample(self->super.pixelFilter, pixelSample) +
+        //      make_vec2f(0.5f);
+        //}
+        const PixelFilter *uniform pf = self->super.pixelFilter;
         vec2f pfSample = pixelSample;
-        if (self->super.pixelFilter)
-        {
-          pfSample =
-              self->super.pixelFilter->sample(self->super.pixelFilter, pixelSample) +
-              make_vec2f(0.5f);
+        if (pf) {
+            pfSample = pf->sample(pf, pixelSample) + make_vec2f(0.5f);
         }
 
         screenSample.sampleID.z = startSampleID + s;
@@ -387,22 +393,22 @@ export void FoveatedRenderer_set(void *uniform _self,
     void *uniform samplingData,
     uniform int samplingDataCnt);
 
-void FoveatedRenderer_Constructor(FoveatedRenderer *uniform self,
-    void *uniform cppE)
-{
-  Renderer_Constructor(&self->super, cppE);
-
-  self->clearSamples = FoveatedRenderer_default_clearSamples;
-  self->renderSamples = FoveatedRenderer_default_renderSamples;
-
-  self->clearColour = make_vec3f(0.0f);
-  self->clearAlpha = 0.0f;
-  self->clearDepth = inf;
-  self->clearNormalAlbedo = make_vec3f(0.0f);
-
-  self->samplingData = NULL;
-  self->samplingDataCnt = 0;
-}
+//void FoveatedRenderer_Constructor(FoveatedRenderer *uniform self,
+//    void *uniform cppE)
+//{
+//  Renderer_Constructor(&self->super, cppE);
+//
+//  self->clearSamples = FoveatedRenderer_default_clearSamples;
+//  self->renderSamples = FoveatedRenderer_default_renderSamples;
+//
+//  self->clearColour = make_vec3f(0.0f);
+//  self->clearAlpha = 0.0f;
+//  self->clearDepth = inf;
+//  self->clearNormalAlbedo = make_vec3f(0.0f);
+//
+//  self->samplingData = NULL;
+//  self->samplingDataCnt = 0;
+//}
 
 // Exports (called from C++) //////////////////////////////////////////////////
 

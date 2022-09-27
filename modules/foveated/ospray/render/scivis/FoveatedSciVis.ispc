@@ -9,6 +9,8 @@
 #include "math/sampling.ih"
 #include "render/scivis/surfaces.ih"
 #include "render/scivis/volumes.ih"
+#include "fb/FrameBuffer.ih"
+#include "common/World.ih"
 
 void FoveatedSciVis_renderSample(Renderer *uniform _self,
     FrameBuffer *uniform fb,
@@ -156,7 +158,7 @@ void FoveatedSciVis_renderSample(Renderer *uniform _self,
 export void *uniform FoveatedSciVis_create(void *uniform cppE)
 {
   uniform FoveatedSciVis *uniform self = uniform new uniform FoveatedSciVis;
-  FoveatedRenderer_Constructor(&self->super, cppE);
+  //FoveatedRenderer_Constructor(&self->super, cppE);
   self->super.super.renderSample = FoveatedSciVis_renderSample;
   return self;
 }

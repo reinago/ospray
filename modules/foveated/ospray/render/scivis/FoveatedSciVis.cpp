@@ -6,6 +6,7 @@
 #include "lights/AmbientLight.h"
 #include "lights/HDRILight.h"
 #include "lights/SunSkyLight.h"
+#include "common/World.h"
 // ispc exports
 #include "common/World_ispc.h"
 #include "render/scivis/FoveatedSciVis_ispc.h"
@@ -30,7 +31,7 @@ void FoveatedSciVis::commit()
 
   visibleLights = getParam<bool>("visibleLights", false);
 
-  ispc::FoveatedSciVis_set(getIE(),
+  ispc::FoveatedSciVis_set(getSh(),
       getParam<bool>("shadows", false),
       getParam<int>("aoSamples", 0),
       getParam<float>("aoDistance", getParam<float>("aoRadius", 1e20f)),

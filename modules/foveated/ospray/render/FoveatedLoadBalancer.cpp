@@ -23,7 +23,7 @@ void FoveatedLoadBalancer::renderFrame(
   auto *fovRenderer = dynamic_cast<FoveatedRenderer *>(renderer);
   if (!fovRenderer) {
     // Not a foveated renderer, use the default tiled rendering.
-    renderTiles(fb, renderer, camera, world, fb->getTileIDs(), perFrameData);
+    renderTiles(fb, renderer, camera, world, fb->getRenderTaskIDs(), perFrameData);
   } else {
     // Foveated renderer, render the samples.
     renderSamples(fb, fovRenderer, camera, world, perFrameData);

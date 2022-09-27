@@ -16,13 +16,13 @@ struct FoveatedRenderer : public Renderer
   FoveatedRenderer();
   virtual ~FoveatedRenderer() override;
 
-  virtual void clearSamples(FrameBuffer *fb,
-      vec3f *albedoBuffer,
-      vec3f *normalBuffer,
-      void *lookAtOld,
-      int32 lookAtCnt,
-      void *perFrameData,
-      size_t jobID) const;
+  //virtual void clearSamples(FrameBuffer *fb,
+  //    vec3f *albedoBuffer,
+  //    vec3f *normalBuffer,
+  //    void *lookAtOld,
+  //    int32 lookAtCnt,
+  //    void *perFrameData,
+  //    size_t jobID) const;
 
   virtual void commit() override;
 
