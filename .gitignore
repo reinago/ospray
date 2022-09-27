@@ -29,6 +29,7 @@ readme.pdf
 !/modules/multiDevice
 !/modules/pluggableGeometryExample
 !/modules/simdGeometryExample
+!/modules/foveated
 *.vim
 .idea/
 premake.local.*

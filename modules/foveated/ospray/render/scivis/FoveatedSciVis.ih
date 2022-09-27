@@ -1,0 +1,35 @@
+// Copyright 2009-2020 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+
+#pragma once
+
+#include "render/scivis/SciVis.ih"
+#include "render/FoveatedRenderer.ih"
+
+struct FoveatedSciVis
+{
+  FoveatedRenderer super;
+  SciVis base;
+};
+
+vec3f lightAlpha(
+    const uniform SciVis *uniform self,
+    Ray &ray,
+    const FrameBuffer *uniform fb,
+    const World *uniform world,
+    ScreenSample &sample,
+    varying LDSampler *uniform ldSampler,
+    vec3f weight,
+    float rayOffset,
+    uniform float quality);
+
+vec3f FoveatedSciVis_computeAO(
+    const uniform FoveatedSciVis *uniform self,
+    const FrameBuffer *uniform fb,
+    const World *uniform world,
+    ScreenSample &sample,
+    varying LDSampler *uniform ldSampler,
+    const varying DifferentialGeometry &dg,
+    const uniform int sampleCnt,
+    const uniform float aoRadius,
+    const varying vec3i &sampleID);

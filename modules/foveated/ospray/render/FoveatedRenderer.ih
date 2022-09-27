@@ -1,0 +1,50 @@
+// Copyright 2009-2020 Intel Corporation
+// SPDX-License-Identifier: Apache-2.0
+
+#pragma once
+
+#include "render/Renderer.ih"
+
+struct FoveatedRenderer;
+
+typedef unmasked void (*FoveatedRenderer_ClearSamplesFct)(
+    FoveatedRenderer *uniform self,
+    FrameBuffer *uniform fb,
+    vec3f *uniform albedoBuffer,
+    vec3f *uniform normalBuffer,
+    uniform vec2i *uniform lookAtOld,
+    uniform int lookAtCnt,
+    void *uniform perFrameData,
+    uniform int taskIndex);
+
+typedef unmasked void (*FoveatedRenderer_RenderSamplesFct)(
+    FoveatedRenderer *uniform self,
+    FrameBuffer *uniform fb,
+    Camera *uniform camera,
+    World *uniform model,
+    uniform int accumID,
+    vec3f *uniform albedoBuffer,
+    vec3f *uniform normalBuffer,
+    uniform vec2i *uniform lookAt,
+    uniform int lookAtCnt,
+    void *uniform perFrameData,
+    uniform int taskIndex);
+
+struct FoveatedRenderer
+{
+  Renderer super;
+
+  FoveatedRenderer_ClearSamplesFct clearSamples;
+  FoveatedRenderer_RenderSamplesFct renderSamples;
+
+  vec3f clearColour;
+  float clearAlpha;
+  float clearDepth;
+  vec3f clearNormalAlbedo;
+
+  vec2i *samplingData;
+  int32 samplingDataCnt;
+};
+
+void FoveatedRenderer_Constructor(FoveatedRenderer *uniform self,
+    void *uniform cppE);
