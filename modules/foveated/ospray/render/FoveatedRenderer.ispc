@@ -186,8 +186,11 @@ unmasked void FoveatedRenderer_default_clearSamples(
   // Get the framebuffer view.
   FrameBufferView *uniform fbV = (FrameBufferView * uniform) fb;
 
-  const uniform int begin = taskIndex * RENDERTILE_PIXELS_PER_JOB;
-  const uniform int end = begin + RENDERTILE_PIXELS_PER_JOB;
+  //const uniform int begin = taskIndex * RENDERTILE_PIXELS_PER_JOB;
+  //const uniform int end = begin + RENDERTILE_PIXELS_PER_JOB;
+  // TODO: guesswork
+  const uniform int begin = taskIndex * TILE_SIZE;
+  const uniform int end = begin + TILE_SIZE;
 
   for (uniform uint32 i = begin; i < end; i += programCount) {
     // Get the current index of the samplingData.
@@ -243,8 +246,11 @@ unmasked void FoveatedRenderer_default_renderSamples(
 
   CameraSample cameraSample;
 
-  const uniform int begin = taskIndex * RENDERTILE_PIXELS_PER_JOB;
-  const uniform int end = begin + RENDERTILE_PIXELS_PER_JOB;
+  //const uniform int begin = taskIndex * RENDERTILE_PIXELS_PER_JOB;
+  //const uniform int end = begin + RENDERTILE_PIXELS_PER_JOB;
+  // TODO: guesswork
+  const uniform int begin = taskIndex * TILE_SIZE;
+  const uniform int end = begin + TILE_SIZE;
 
   for (uniform uint32 i = begin; i < end; i += programCount) {
     // Get the current index of the samplingData.

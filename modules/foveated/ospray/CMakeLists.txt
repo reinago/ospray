@@ -82,7 +82,10 @@ target_include_directories(ospray_module_foveated
 ## Add compile definitions for the foveated rendering.
 target_compile_definitions(ospray_module_foveated
   PUBLIC
-    RENDER_SAMPLES_PER_JOB=${OSPRAY_PIXELS_PER_JOB}
+    # was: RENDER_SAMPLES_PER_JOB={OSPRAY_PIXELS_PER_JOB}
+    # both the following are broken
+    RENDER_SAMPLES_PER_JOB=${OSPRAY_RENDER_TASK_SIZE}
+    RENDERTILE_PIXELS_PER_JOB=${OSPRAY_TILE_SIZE} # no idea where to actually get that from
 )
 
 ## Install the library.
