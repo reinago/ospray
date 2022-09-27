@@ -28,6 +28,9 @@
 #define GL_RGB32F 0x8815
 #endif
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 static bool g_quitNextFrame = false;
 
 static const std::vector<std::string> g_scenes = {"boxes_lit",
@@ -59,7 +62,7 @@ static const std::vector<std::string> g_curveVariant = {
     "bspline", "hermite", "catmull-rom", "linear", "cones"};
 
 static const std::vector<std::string> g_renderers = {
-    "scivis", "pathtracer", "ao", "debug"};
+    "scivis", "pathtracer", "ao", "debug", "foveatedscivis"};
 
 static const std::vector<std::string> g_debugRendererTypes = {"eyeLight",
     "primID",
@@ -130,6 +133,84 @@ GLFWOSPRayWindow::GLFWOSPRayWindow(const vec2i &windowSize, bool denoiser)
   if (activeWindow != nullptr) {
     throw std::runtime_error("Cannot create more than one GLFWOSPRayWindow!");
   }
+
+  // TODO make this a parameter or something
+  std::string maps_prefix = "S:\\Daten\\Sonstige\\friess_foveated_maps";
+
+  std::string filename = maps_prefix + "mc1024_92702\\stippleMap.png";
+  int w, h, n;
+  unsigned char *data = stbi_load(filename.c_str(), &w, &h, &n, 0);
+
+  unsigned char *scanLine0 = data;
+  unsigned char *scanLine1 = data + w * n;
+
+  this->samplingMapData.reserve(w);
+  for (unsigned int i = 0; i < w; i++) {
+    unsigned char rx = scanLine0[0 + i * n];
+    unsigned char gx = scanLine0[1 + i * n];
+    unsigned char bx = scanLine0[2 + i * n];
+
+    unsigned char ry = scanLine1[0 + i * n];
+    unsigned char gy = scanLine1[1 + i * n];
+    unsigned char by = scanLine1[2 + i * n];
+
+    UINT32 x = (0x00u << 24) | (rx << 16) | (gx << 8) | bx;
+    UINT32 y = (0x00u << 24) | (ry << 16) | (gy << 8) | by;
+
+    this->samplingMapData.emplace_back(
+        indexStruct(static_cast<INT32>(x), static_cast<INT32>(y)));
+  }
+
+  stbi_image_free(data);
+
+  filename = maps_prefix + "mc1024_92702\\neighborIndexMap.u32.bin";
+  FILE *niMap = nullptr;
+  ::fopen_s(&niMap, filename.c_str(), "rb");
+  if (niMap != nullptr) {
+    std::vector<char> nIndex(
+        268435456); // indexMap width * indexMap height * 4 * 16
+    ::fread(nIndex.data(), sizeof(char), 268435456, niMap);
+
+    this->neighborIdMap.reserve(nIndex.size() / 4);
+    for (int i = 0; i < nIndex.size(); i += 4) {
+      UINT32 ui;
+      char b[] = {nIndex[i + 0], nIndex[i + 1], nIndex[i + 2], nIndex[i + 3]};
+      memcpy(&ui, &b, sizeof(ui));
+      this->neighborIdMap.push_back(ui);
+    }
+
+    ::fclose(niMap);
+  }
+
+  filename = maps_prefix + "mc1024_92702\\neighborWeightMap.f32.bin";
+  FILE *nwMap = nullptr;
+  ::fopen_s(&nwMap, filename.c_str(), "rb");
+  if (nwMap != nullptr) {
+    std::vector<char> nWeight(
+        268435456); // indexMap width * indexMap height * 4 * 16
+    ::fread(nWeight.data(), sizeof(char), 268435456, nwMap);
+
+    this->neighborWeightMap.reserve(nWeight.size() / 4);
+    for (int i = 0; i < nWeight.size(); i += 4) {
+      float f;
+      char b[] = {
+          nWeight[i + 0], nWeight[i + 1], nWeight[i + 2], nWeight[i + 3]};
+      memcpy(&f, &b, sizeof(f));
+      this->neighborWeightMap.push_back(f);
+    }
+
+    ::fclose(nwMap);
+  }
+
+  this->rendererFOVSV.setParam(
+      "samplingData", (void *)this->samplingMapData.data());
+  this->rendererFOVSV.setParam(
+      "samplingDataCnt", static_cast<int>(this->samplingMapData.size()));
+
+  this->lookAt.resize(2, vec2i(0, 0));
+  rendererFOVSV.setParam<void *>("lookAt", (void *)this->lookAt.data());
+  rendererFOVSV.setParam<int>(
+      "lookAtCnt", static_cast<int>(this->lookAt.size()));
 
   activeWindow = this;
 
@@ -351,6 +432,15 @@ void GLFWOSPRayWindow::motion(const vec2f &position)
   }
 
   previousMouse = mouse;
+
+  vec2f invertedMouse = (mouse / this->windowSize);
+  invertedMouse.x = 1.0f - invertedMouse.x;
+  this->lookAt[0] = this->windowSize * invertedMouse;
+  // Offset required since the sampling map has a resolution of 2048x2048 and we
+  // need to move the centre (1024,1024) to the current look at point in the
+  // output texture.
+  this->lookAt[0].y += 1024 - this->windowSize.y; // is 256 for height 768
+  this->lookAtChanged = true;
 }
 
 void GLFWOSPRayWindow::display()
@@ -555,7 +645,7 @@ void GLFWOSPRayWindow::buildUI()
       refreshScene(true);
   }
 
-  static int whichRenderer = 0;
+  static int whichRenderer = 4; // default to foveated
   static int whichDebuggerType = 0;
   if (ImGui::Combo("renderer##whichRenderer",
           &whichRenderer,
@@ -575,6 +665,8 @@ void GLFWOSPRayWindow::buildUI()
       rendererType = OSPRayRendererType::AO;
     else if (rendererTypeStr == "debug")
       rendererType = OSPRayRendererType::DEBUGGER;
+    else if (rendererTypeStr == "foveatedscivis")
+      rendererType = OSPRayRendererType::FOVEATEDSCIVIS;
     else
       rendererType = OSPRayRendererType::OTHER;
 
@@ -649,6 +741,7 @@ void GLFWOSPRayWindow::buildUI()
     rendererSV.setParam("pixelFilter", pixelFilterType);
     rendererAO.setParam("pixelFilter", pixelFilterType);
     rendererDBG.setParam("pixelFilter", pixelFilterType);
+    rendererFOVSV.setParam("pixelFilter", pixelFilterType);
     addObjectToCommit(renderer->handle());
   }
 
@@ -660,6 +753,7 @@ void GLFWOSPRayWindow::buildUI()
     rendererSV.setParam("pixelSamples", spp);
     rendererAO.setParam("pixelSamples", spp);
     rendererDBG.setParam("pixelSamples", spp);
+    rendererFOVSV.setParam("pixelSamples", spp);
     addObjectToCommit(renderer->handle());
   }
 
@@ -672,6 +766,7 @@ void GLFWOSPRayWindow::buildUI()
     rendererSV.setParam("backgroundColor", bgColor);
     rendererAO.setParam("backgroundColor", bgColor);
     rendererDBG.setParam("backgroundColor", bgColor);
+    rendererFOVSV.setParam("backgroundColor", bgColor);
     addObjectToCommit(renderer->handle());
   }
 
@@ -682,11 +777,13 @@ void GLFWOSPRayWindow::buildUI()
       rendererSV.setParam("map_backplate", backplateTex);
       rendererAO.setParam("map_backplate", backplateTex);
       rendererDBG.setParam("map_backplate", backplateTex);
+      rendererFOVSV.setParam("map_backplate", backplateTex);
     } else {
       rendererPT.removeParam("map_backplate");
       rendererSV.removeParam("map_backplate");
       rendererAO.removeParam("map_backplate");
       rendererDBG.removeParam("map_backplate");
+      rendererFOVSV.removeParam("map_backplate");
     }
     addObjectToCommit(renderer->handle());
   }
@@ -775,7 +872,8 @@ void GLFWOSPRayWindow::buildUI()
       updateCamera();
       addObjectToCommit(camera.handle());
     }
-  } else if (rendererType == OSPRayRendererType::SCIVIS) {
+  } else if (rendererType == OSPRayRendererType::SCIVIS
+      || rendererType == OSPRayRendererType::FOVEATEDSCIVIS) {
     static bool shadowsEnabled = false;
     if (ImGui::Checkbox("shadows", &shadowsEnabled)) {
       renderer->setParam("shadows", shadowsEnabled);
@@ -798,6 +896,16 @@ void GLFWOSPRayWindow::buildUI()
     if (ImGui::SliderFloat("volumeSamplingRate", &samplingRate, 0.001f, 2.f)) {
       renderer->setParam("volumeSamplingRate", samplingRate);
       addObjectToCommit(renderer->handle());
+    }
+
+    if (rendererType == OSPRayRendererType::FOVEATEDSCIVIS) {
+      if (this->lookAtChanged) {
+        renderer->setParam<void *>("lookAt", (void *)this->lookAt.data());
+        renderer->setParam<int>(
+            "lookAtCnt", static_cast<int>(this->lookAt.size()));
+        addObjectToCommit(renderer->handle());
+        this->lookAtChanged = false;
+      }
     }
   } else if (rendererType == OSPRayRendererType::AO) {
     static int aoSamples = 1;
@@ -883,6 +991,9 @@ void GLFWOSPRayWindow::refreshScene(bool resetCamera)
     break;
   case OSPRayRendererType::DEBUGGER:
     renderer = &rendererDBG;
+    break;
+  case OSPRayRendererType::FOVEATEDSCIVIS:
+    renderer = &rendererFOVSV;
     break;
   default:
     throw std::runtime_error("invalid renderer chosen!");

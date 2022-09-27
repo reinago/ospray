@@ -21,6 +21,7 @@ enum class OSPRayRendererType
   PATHTRACER,
   AO,
   DEBUGGER,
+  FOVEATEDSCIVIS,
   OTHER
 };
 
@@ -87,6 +88,7 @@ class GLFWOSPRayWindow
   cpp::Renderer rendererSV{"scivis"};
   cpp::Renderer rendererAO{"ao"};
   cpp::Renderer rendererDBG{"debug"};
+  cpp::Renderer rendererFOVSV{"foveatedscivis"};
   cpp::Renderer *renderer{nullptr};
   cpp::Camera camera{"perspective"};
   cpp::World world;
@@ -104,8 +106,10 @@ class GLFWOSPRayWindow
 
   std::string curveVariant{"bspline"};
 
-  OSPRayRendererType rendererType{OSPRayRendererType::SCIVIS};
-  std::string rendererTypeStr{"scivis"};
+  //OSPRayRendererType rendererType{OSPRayRendererType::SCIVIS};
+  //std::string rendererTypeStr{"scivis"};
+  OSPRayRendererType rendererType{OSPRayRendererType::FOVEATEDSCIVIS};
+  std::string rendererTypeStr{"foveatedscivis"};
 
   std::string pixelFilterTypeStr{"gaussian"};
 
@@ -126,4 +130,23 @@ class GLFWOSPRayWindow
 
   // FPS measurement of last frame
   float latestFPS{0.f};
+
+  // foveated support data
+  struct indexStruct
+  {
+    indexStruct(INT32 x, INT32 y)
+    {
+      coord = {{x, y}};
+    }
+    std::array<INT32, 2> coord;
+  };
+  std::vector<indexStruct> samplingMapData;
+  std::vector<UINT32> neighborIdMap;
+  std::vector<float> neighborWeightMap;
+
+  // vec2i lookAt{0, 0};
+  std::vector<vec2i> lookAt;
+  bool lookAtChanged{false};
+
+  size_t hassCnt{0};
 };
